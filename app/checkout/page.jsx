@@ -1,5 +1,7 @@
 'use client';
-import { useState } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useEffect, useState } from 'react';
 import { useCartStore, useAuthStore } from '@/store/useStore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -9,21 +11,25 @@ export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.name || '',
     address: user?.address || '',
     contact: user?.contact || '',
   });
 
-  if (!isAuthenticated) {
-    router.push('/auth/login');
-    return null;
-  }
-
-  if (items.length === 0) {
-    router.push('/cart');
-    return null;
-  }
+  // Perform client-side redirects after mount to avoid SSR/browser API usage
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsRedirecting(true);
+      router.replace('/auth/login');
+      return;
+    }
+    if (items.length === 0) {
+      setIsRedirecting(true);
+      router.replace('/cart');
+    }
+  }, [isAuthenticated, items.length, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,6 +62,10 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   };
+
+  if (isRedirecting) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -1177,7 +1177,7 @@ export default function AdminProducts() {
                   editingProduct ? 'Update Product' : 'Create Product'
                 )}
               </button>
-            </div>
+              </div>
             </div>
           </div>
         )}
