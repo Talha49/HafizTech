@@ -218,7 +218,7 @@ export default function AdminDashboard() {
             
             {/* Export Actions */}
             <div className="flex gap-3">
-              <button
+            <button
                 onClick={handleExportPDF}
                 disabled={exportLoading.pdf}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
@@ -238,9 +238,9 @@ export default function AdminDashboard() {
                     📄 Export PDF
                   </>
                 )}
-              </button>
+            </button>
               
-              <button
+            <button
                 onClick={handleExportExcel}
                 disabled={exportLoading.excel}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
                     📊 Export Excel
                   </>
                 )}
-              </button>
+            </button>
             </div>
           </div>
         </div>
@@ -635,12 +635,12 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-medium" style={{ color: theme.text.primary }}>
-                        {product.product?.title || 'Unknown Product'}
+                      {product.product?.title || 'Unknown Product'}
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-lg font-semibold" style={{ color: theme.text.primary }}>
-                        {product.totalSold}
+                      {product.totalSold}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -751,7 +751,7 @@ export default function AdminDashboard() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold" style={{ color: theme.text.primary }}>
-                  Manage Products
+            Manage Products
                 </h3>
                 <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
                   Add, edit, and organize products
@@ -775,7 +775,7 @@ export default function AdminDashboard() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold" style={{ color: theme.text.primary }}>
-                  Manage Orders
+            Manage Orders
                 </h3>
                 <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
                   Process and track orders
@@ -799,7 +799,7 @@ export default function AdminDashboard() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold" style={{ color: theme.text.primary }}>
-                  Manage Users
+            Manage Users
                 </h3>
                 <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
                   View and manage user accounts
@@ -823,7 +823,7 @@ export default function AdminDashboard() {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold" style={{ color: theme.text.primary }}>
-                  Site Settings
+            Site Settings
                 </h3>
                 <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
                   Configure system settings
