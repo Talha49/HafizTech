@@ -43,14 +43,7 @@ export default function Footer() {
             </ul>
           </div>
           
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Customer Service</h4>
-            <ul className="space-y-2">
-              <li><Link href="/help" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link href="/returns" className="text-gray-400 hover:text-white transition-colors">Returns</Link></li>
-              <li><Link href="/shipping" className="text-gray-400 hover:text-white transition-colors">Shipping Info</Link></li>
-            </ul>
-          </div>
+          
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
