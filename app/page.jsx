@@ -86,15 +86,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* About Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-8">About Us</h2>
-          <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            {siteSettings.aboutContent}
-          </p>
-        </div>
-      </section>
+      {/* About Section removed; see /about page */}
 
       {/* Featured Products Carousel */}
       <section className="py-16 bg-gray-50">
