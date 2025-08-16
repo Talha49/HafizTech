@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 
 const Contact = () => {
@@ -137,7 +138,8 @@ const Contact = () => {
                   <div>
                     <button
                       type="submit"
-                      className="w-full rounded border border-primary bg-primary p-3 text-white transition hover:bg-opacity-90"
+                      onClick={(e) => e.preventDefault()}
+                      className="w-full rounded border border-primary bg-primary p-3 text-black transition hover:bg-blue-300"
                     >
                       Send Message
                     </button>

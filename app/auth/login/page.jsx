@@ -132,15 +132,7 @@ export default function LoginPage() {
           </form>
 
           {/* Demo Admin Login */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <p className="text-xs text-gray-500 text-center mb-2">Demo Admin Account:</p>
-            <button
-              onClick={() => setFormData({ email: 'admin@hafitech.com', password: 'admin123' })}
-              className="w-full text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded transition-colors"
-            >
-              Fill Admin Credentials
-            </button>
-          </div>
+      
         </div>
       </div>
     </div>

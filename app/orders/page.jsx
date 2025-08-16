@@ -14,10 +14,7 @@ export default function OrdersPage() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+   
 
     // Check for success message
     if (searchParams.get('success') === 'true') {
