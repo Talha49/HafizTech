@@ -6,10 +6,7 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Youtube, 
+  
   ArrowRight, 
   Heart, 
   Zap,
@@ -18,6 +15,9 @@ import {
   Star,
   Send
 } from 'lucide-react';
+
+import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
+
 
 export default function Footer() {
   const [siteSettings, setSiteSettings] = useState({ businessName: 'Hafiz Tech' });
@@ -87,14 +87,13 @@ export default function Footer() {
                   </h3>
                   <div className="text-sm text-cyan-400/80 font-bold tracking-widest uppercase flex items-center space-x-1">
                     <Zap size={12} />
-                    <span>Premium E-Commerce</span>
+                    <span>{siteSettings.slogan ? siteSettings.slogan : 'Premium E-Commerce'}</span>
                   </div>
                 </div>
               </div>
               
               <p className="text-slate-300 text-lg leading-relaxed max-w-lg">
-                Your trusted partner for premium quality products and exceptional service. 
-                We&apos;re committed to delivering excellence in every interaction.
+                We&apos;re your trusted laptop partner, delivering premium quality products and exceptional service. Visit our shop to experience the latest laptops from leading brands and get expert advice. Enjoy competitive pricing, special offers, and comprehensive warranties. Let us help you find the perfect laptop for your needs!
               </p>
 
               {/* Trust Badges */}
@@ -122,7 +121,7 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center space-x-3 text-slate-300 hover:text-cyan-400 transition-colors">
                   <Phone size={18} className="text-green-400" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>03017638491</span>
                 </div>
                 <div className="flex items-center space-x-3 text-slate-300 hover:text-cyan-400 transition-colors">
                   <MapPin size={18} className="text-red-400" />
@@ -160,24 +159,50 @@ export default function Footer() {
             
 
               {/* Social Links */}
-              <div className="space-y-4">
-                <h5 className="font-semibold text-white">Follow Us</h5>
-                <div className="flex space-x-3">
-                  {[
-                    { Icon: Facebook, color: 'hover:text-blue-500', bg: 'hover:bg-blue-500/10' },
-                    { Icon: Twitter, color: 'hover:text-cyan-400', bg: 'hover:bg-cyan-400/10' },
-                    { Icon: Instagram, color: 'hover:text-pink-500', bg: 'hover:bg-pink-500/10' },
-                    { Icon: Youtube, color: 'hover:text-red-500', bg: 'hover:bg-red-500/10' }
-                  ].map(({ Icon, color, bg }, index) => (
-                    <button
-                      key={index}
-                      className={`p-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-slate-400 ${color} ${bg} transition-all duration-300 hover:scale-110 hover:shadow-lg`}
-                    >
-                      <Icon size={20} />
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-4">
+  <h5 className="font-semibold text-white">Follow Us</h5>
+  <div className="flex space-x-3">
+    {[
+      { 
+        Icon: FaFacebookF, 
+        color: 'hover:text-blue-500', 
+        bg: 'hover:bg-blue-500/10', 
+        link: 'https://www.facebook.com/HafizTechPk' 
+      },
+      { 
+        Icon: FaInstagram, 
+        color: 'hover:text-pink-500', 
+        bg: 'hover:bg-pink-500/10', 
+        link: 'https://www.instagram.com/hafiz_tech07' 
+      },
+      { 
+        Icon: FaYoutube, 
+        color: 'hover:text-red-500', 
+        bg: 'hover:bg-red-500/10', 
+        link: 'https://www.youtube.com/@hafiz-tech-' 
+      },
+      { 
+        Icon: FaTiktok, 
+        color: 'hover:text-black', 
+        bg: 'hover:bg-black/10', 
+        link: 'https://www.tiktok.com/@hafiztech0' 
+      }
+    ].map(({ Icon, color, bg, link }, index) => (
+      <a 
+        key={index} 
+        href={link} 
+        target="_blank" 
+        rel="noopener noreferrer"
+      >
+        <button
+          className={`p-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-slate-400 ${color} ${bg} transition-all duration-300 hover:scale-110 hover:shadow-lg`}
+        >
+          <Icon size={20} />
+        </button>
+      </a>
+    ))}
+  </div>
+</div>
             </div>
           </div>
         </div>

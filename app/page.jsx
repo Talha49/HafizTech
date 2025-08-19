@@ -27,7 +27,6 @@ export default function HomePage() {
     'https://images.pexels.com/photos/5632371/pexels-photo-5632371.jpeg',
     'https://images.pexels.com/photos/4464166/pexels-photo-4464166.jpeg',
     'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg',
-    'https://images.pexels.com/photos/4158/apple-iphone-smartphone-desk.jpg'
   ];
 
   useEffect(() => {

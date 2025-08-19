@@ -16,6 +16,8 @@ export default function ProfilePage() {
     address: '',
   });
 
+
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/auth/login');
@@ -218,12 +220,7 @@ export default function ProfilePage() {
                       <span className="text-blue-700">Account Type:</span>
                       <span className="ml-2 font-semibold">{user.role === 'admin' ? 'Administrator' : 'Customer'}</span>
                     </div>
-                    <div>
-                      <span className="text-blue-700">Member Since:</span>
-                      <span className="ml-2 font-semibold">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                  
                   </div>
                 </div>
               </div>

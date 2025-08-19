@@ -105,18 +105,52 @@ export async function POST(request) {
       totalAmount,
       shippingAddress,
     });
-    
-    // Send confirmation email
+
+    // Fetch order with populated product details for email
+    const populatedOrder = await Order.findById(order._id)
+      .populate('items.product', 'title images price')
+      .populate('user', 'name email');
+
+    // Prepare items array for email
+    const emailItems = populatedOrder.items.map(item => ({
+      title: item.product.title,
+      image: Array.isArray(item.product.images) && item.product.images.length > 0 ? item.product.images[0] : '',
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    // Send confirmation email to user
     try {
       await sendOrderConfirmationEmail(decoded.email, {
-        id: order._id,
-        totalAmount,
-        status: order.status,
+        id: populatedOrder._id,
+        totalAmount: populatedOrder.totalAmount,
+        status: populatedOrder.status,
+        items: emailItems,
+        shippingAddress: populatedOrder.shippingAddress,
+        user: { name: populatedOrder.user?.name || '' },
       });
     } catch (emailError) {
       console.error('Email sending error:', emailError);
     }
-    
+
+    // Send notification email to admin
+    try {
+      const { sendAdminNewOrderEmail } = await import('@/lib/email');
+      await sendAdminNewOrderEmail(process.env.MAIL_USER, {
+        id: populatedOrder._id,
+        totalAmount: populatedOrder.totalAmount,
+        status: populatedOrder.status,
+        items: emailItems,
+        shippingAddress: populatedOrder.shippingAddress,
+        user: {
+          name: populatedOrder.user?.name || '',
+          email: populatedOrder.user?.email || '',
+        },
+      });
+    } catch (adminEmailError) {
+      console.error('Admin order notification email error:', adminEmailError);
+    }
+
     return Response.json(order, { status: 201 });
     
   } catch (error) {

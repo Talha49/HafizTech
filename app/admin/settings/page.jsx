@@ -12,6 +12,7 @@ export default function AdminSettings() {
   const router = useRouter();
   const [settings, setSettings] = useState({
     businessName: 'Hafiz Tech',
+    slogan: 'Elite Store',
     headerLogo: '',
     footerLogo: '',
     aboutContent: 'Welcome to our amazing e-commerce store!'
@@ -115,7 +116,19 @@ export default function AdminSettings() {
                 placeholder="Enter business name"
               />
             </div>
-
+            {/* Slogan */}
+               <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Slogan
+              </label>
+              <input
+                type="text"
+                value={settings.slogan}
+                onChange={(e) => setSettings({...settings, slogan: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter slogan"
+              />
+            </div>
             {/* Header Logo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

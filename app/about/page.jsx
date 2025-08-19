@@ -1,14 +1,32 @@
+
 'use client';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
+
+// Import images from the assets folder
+import Ab1 from '../../assets/Ab1.jpg';
+import Ab2 from '../../assets/Ab2.jpg';
+import Ab3 from '../../assets/Ab3.jpg';
+
+const heroImages = [Ab3, Ab2, Ab1];
+
+// Animation variants for staggered entrance
+const imageVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: (index) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      delay: index * 0.2,
+      ease: 'easeOut',
+    },
+  }),
+};
 
 export default function AboutPage() {
   const [siteSettings, setSiteSettings] = useState({ aboutContent: '' });
-  const heroImages = [
-    'https://images.pexels.com/photos/6214479/pexels-photo-6214479.jpeg',
-    'https://images.pexels.com/photos/5632371/pexels-photo-5632371.jpeg',
-    'https://images.pexels.com/photos/4464166/pexels-photo-4464166.jpeg',
-  ];
 
   useEffect(() => {
     const fetchSiteSettings = async () => {
@@ -30,17 +48,29 @@ export default function AboutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
           {/* Left: image mosaic */}
-          <div className="grid grid-cols-2 gap-4 lg:col-span-1">
-            <div className="relative w-full h-56 rounded-xl overflow-hidden shadow">
-              <Image src={heroImages[0]} alt="About image 1" fill className="object-cover" />
-            </div>
-            <div className="relative w-full h-56 rounded-xl overflow-hidden shadow">
-              <Image src={heroImages[1]} alt="About image 2" fill className="object-cover" />
-            </div>
-            <div className="relative w-full h-56 rounded-xl overflow-hidden shadow col-span-2">
-              <Image src={heroImages[2]} alt="About image 3" fill className="object-cover" />
-            </div>
-          </div>
+         <div className="grid grid-cols-2 gap-4 lg:col-span-1">
+      {heroImages.map((image, index) => (
+        <motion.div
+          key={index}
+          className={`relative w-full ${
+            index === 2 ? 'col-span-2 aspect-video' : 'aspect-square'
+          } rounded-xl overflow-hidden shadow-lg group p-1 bg-gray-50`} // Added bg-gray-50 and aspect ratios
+          initial="hidden"
+          animate="visible"
+          custom={index}
+          variants={imageVariants}
+        >
+          <Image
+            src={image}
+            alt={`About image ${index + 1}`}
+            fill
+            className="object-contain transition-transform duration-500 group-hover:scale-105"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
+        </motion.div>
+      ))}
+    </div>
 
           {/* Right: formatted about content from site settings */}
           <div className="lg:col-span-2">
@@ -56,5 +86,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-

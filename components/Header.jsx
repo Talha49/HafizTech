@@ -93,7 +93,7 @@ export default function Header() {
                 </div>
                 <div className="text-xs text-cyan-400/80 font-bold tracking-widest uppercase flex items-center space-x-1">
                   <Zap size={10} />
-                  <span>Elite Store</span>
+                  <span>{siteSettings.slogan ? siteSettings.slogan : 'Elite Store'}</span>
                 </div>
               </div>
             </Link>
@@ -168,18 +168,18 @@ export default function Header() {
                       </div>
                       
                       <div className="p-2">
-                        <Link href="/profile" className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
+                        <Link href="/profile" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
                           <User size={18} className="mr-3 group-hover:text-cyan-400 transition-colors" />
                           Profile Settings
                         </Link>
-                        
-                        <Link href="/orders" className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
+
+                        <Link href="/orders" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
                           <ShoppingCart size={18} className="mr-3 group-hover:text-blue-400 transition-colors" />
                           Order History
                         </Link>
                         
                         {user?.role === 'admin' && (
-                          <Link href="/admin" className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
+                          <Link href="/admin" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200 group">
                             <div className="w-4 h-4 mr-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded group-hover:scale-110 transition-transform"></div>
                             Admin Panel
                           </Link>
@@ -238,29 +238,29 @@ export default function Header() {
         }`}>
           <div className="border-t border-slate-600/30 bg-slate-900/98 backdrop-blur-xl">
             <div className="px-4 py-6 space-y-3">
-              <Link href="/products" className="block px-4 py-4 text-white hover:text-cyan-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 font-medium border border-transparent hover:border-slate-600/50">
+              <Link href="/products" onClick={() => setIsMenuOpen(false)} className="block px-4 py-4 text-white hover:text-cyan-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 font-medium border border-transparent hover:border-slate-600/50">
                 Products
               </Link>
               
               {isAuthenticated ? (
                 <>
-                  <Link href="/wishlist" className="flex items-center px-4 py-4 text-white hover:text-red-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
+                  <Link href="/wishlist" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-4 text-white hover:text-red-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
                     <Heart size={20} className="mr-3" />
                     Wishlist
                   </Link>
-                  <Link href="/cart" className="flex items-center px-4 py-4 text-white hover:text-cyan-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
+                  <Link href="/cart" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-4 text-white hover:text-cyan-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
                     <ShoppingCart size={20} className="mr-3" />
                     Cart ({totalItems})
                   </Link>
-                  <Link href="/profile" className="flex items-center px-4 py-4 text-white hover:text-blue-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
+                  <Link href="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-4 text-white hover:text-blue-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
                     <User size={20} className="mr-3" />
                     Profile
                   </Link>
-                  <Link href="/orders" className="block px-4 py-4 text-white hover:text-purple-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
+                  <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="block px-4 py-4 text-white hover:text-purple-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
                     Order History
                   </Link>
                   {user?.role === 'admin' && (
-                    <Link href="/admin" className="block px-4 py-4 text-white hover:text-purple-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
+                    <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="block px-4 py-4 text-white hover:text-purple-400 hover:bg-slate-800/50 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-600/50">
                       Admin Panel
                     </Link>
                   )}

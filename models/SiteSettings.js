@@ -5,6 +5,10 @@ const SiteSettingsSchema = new mongoose.Schema({
     type: String,
     default: 'Hafiz Tech',
   },
+  slogan:{
+    type: String,
+    default: 'Elite Store',
+  },
   headerLogo: {
     type: String,
     default: '',
