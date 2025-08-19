@@ -6,8 +6,8 @@ import Image from 'next/image';
 
 // Import images from the assets folder
 import Ab1 from '../../assets/Ab1.jpg';
-import Ab2 from '../../assets/Ab2.jpg';
-import Ab3 from '../../assets/Ab3.jpg';
+import Ab2 from '../../assets/AB2.jpg';
+import Ab3 from '../../assets/AB3.jpg';
 
 const heroImages = [Ab3, Ab2, Ab1];
 
