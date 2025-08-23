@@ -69,17 +69,21 @@ export default function Footer() {
             {/* Company Info */}
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="absolute -inset-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-2xl blur-lg opacity-40"></div>
-                  <div className="relative w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 border border-cyan-500/30 rounded-2xl flex items-center justify-center shadow-2xl">
-                    {siteSettings.footerLogo ? (
-                      <Image src={siteSettings.footerLogo} alt="Logo" width={40} height={40} className="rounded-xl" />
-                    ) : (
-                      <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                        H
-                      </div>
-                    )}
-                  </div>
+                <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
+                  {siteSettings.footerLogo ? (
+                    <Image
+                      src={siteSettings.footerLogo}
+                      alt="Logo"
+                      width={40}
+                      height={40}
+                      style={{ objectFit: 'contain' }}
+                      className=""
+                      sizes="40px"
+                      priority
+                    />
+                  ) : (
+                    <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">H</span>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold bg-gradient-to-r from-white via-cyan-200 to-blue-300 bg-clip-text text-transparent">

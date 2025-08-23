@@ -74,16 +74,21 @@ export default function Header() {
                 <div className="absolute -inset-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-70 transition-opacity duration-500"></div>
                 
                 {/* Main logo container */}
-                <div className="relative w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 border border-cyan-500/30 rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-500">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-purple-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-all duration-300 overflow-hidden">
                   {siteSettings.headerLogo ? (
-                    <Image src={siteSettings.headerLogo} alt="Logo" width={40} height={40} className="rounded-xl relative z-10" />
+                    <Image
+                      src={siteSettings.headerLogo}
+                      alt="Logo"
+                      width={40}
+                      height={40}
+                      style={{ objectFit: 'contain' }}
+                      className=""
+                      sizes="40px"
+                      priority
+                    />
                   ) : (
-                    <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent relative z-10">
-                      H
-                    </div>
+                    <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">H</span>
                   )}
-                  <Sparkles className="absolute top-1 right-1 w-3 h-3 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
               </div>
               
