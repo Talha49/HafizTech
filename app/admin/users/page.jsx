@@ -23,7 +23,7 @@ const theme = {
 };
 
 export default function AdminUsers() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +39,15 @@ export default function AdminUsers() {
   });
 
   useEffect(() => {
+    // Don't redirect until Zustand state is hydrated
+    if (!isHydrated) return;
+    
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/auth/login');
       return;
     }
     fetchUsers();
-  }, [isAuthenticated, user, router, pagination.page]);
+  }, [isAuthenticated, user, router, pagination.page, isHydrated]);
 
   const fetchUsers = async () => {
     try {
@@ -137,7 +140,7 @@ export default function AdminUsers() {
     };
   };
 
-  if (loading) {
+  if (loading || !isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.background }}>
         <div className="relative">

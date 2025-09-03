@@ -72,7 +72,15 @@ function ProductCard({ product }) {
           
           {/* Stock status badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {isLowStock && (
+            {/* Sale badge - highest priority */}
+            {product.isOnSale && product.discountPercentage > 0 && (
+              <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                SALE {product.discountPercentage}% OFF
+              </div>
+            )}
+            
+            {/* Stock status badges */}
+            {isLowStock && !product.isOnSale && (
               <div className="flex items-center bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 <Zap className="w-3 h-3 mr-1" />
                 Only {product.quantity} left
@@ -83,7 +91,7 @@ function ProductCard({ product }) {
                 SOLD OUT
               </div>
             )}
-            {!isOutOfStock && !isLowStock && product.quantity <= 10 && (
+            {!isOutOfStock && !isLowStock && !product.isOnSale && product.quantity <= 10 && (
               <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 IN STOCK
               </div>
@@ -146,13 +154,26 @@ function ProductCard({ product }) {
         {/* Price section */}
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-900">₨{product.price?.toLocaleString()}</span>
-            {product.originalPrice && product.originalPrice > product.price && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400 line-through">₨{product.originalPrice?.toLocaleString()}</span>
-                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-gray-900">₨{product.price?.toLocaleString()}</span>
+              {product.isOnSale && product.discountPercentage > 0 && (
+                <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">
+                  -{product.discountPercentage}%
                 </span>
+              )}
+            </div>
+            {product.isOnSale && product.originalPrice && product.originalPrice > product.price && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-gray-400 line-through">₨{product.originalPrice?.toLocaleString()}</span>
+                <span className="text-xs font-medium text-green-600">
+                  Save ₨{(product.originalPrice - product.price)?.toLocaleString()}
+                </span>
+              </div>
+            )}
+            {/* Sale end date */}
+            {product.isOnSale && product.saleEndDate && new Date(product.saleEndDate) > new Date() && (
+              <div className="text-xs text-red-600 font-medium mt-1">
+                Sale ends: {new Date(product.saleEndDate).toLocaleDateString()}
               </div>
             )}
           </div>

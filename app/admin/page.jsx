@@ -53,7 +53,7 @@ const theme = {
 const CHART_COLORS = ['#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2', '#7c3aed'];
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   
   // State management
@@ -114,12 +114,15 @@ export default function AdminDashboard() {
 
   // Authentication check
   useEffect(() => {
+    // Don't redirect until Zustand state is hydrated
+    if (!isHydrated) return;
+    
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/auth/login');
       return;
     }
     fetchAnalytics();
-  }, [isAuthenticated, user, router, fetchAnalytics]);
+  }, [isAuthenticated, user, router, fetchAnalytics, isHydrated]);
 
   // Debounced filter changes
   useEffect(() => {
@@ -183,7 +186,7 @@ export default function AdminDashboard() {
     }
   }, [analytics]);
 
-  if (loading) {
+  if (loading || !isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.background }}>
         <div className="text-center">

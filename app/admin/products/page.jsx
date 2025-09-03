@@ -50,7 +50,7 @@ const useDebounce = (value, delay) => {
 };
 
 export default function AdminProducts() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   
   // State management
@@ -61,6 +61,21 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [showBulkDiscountModal, setShowBulkDiscountModal] = useState(false);
+  const [bulkDiscountData, setBulkDiscountData] = useState({
+    discountPercentage: '',
+    applyToAll: false,
+    selectedCategory: '',
+    saleEndDate: ''
+  });
+  const [applyingBulkDiscount, setApplyingBulkDiscount] = useState(false);
+  const [showRemoveDiscountModal, setShowRemoveDiscountModal] = useState(false);
+  const [removeDiscountData, setRemoveDiscountData] = useState({
+    applyToAll: false,
+    selectedCategory: '',
+    onSaleOnly: true
+  });
+  const [removingDiscount, setRemovingDiscount] = useState(false);
   // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 7;
@@ -80,6 +95,10 @@ export default function AdminProducts() {
     description: '',
     category: '',
     price: '',
+    originalPrice: '',
+    discountPercentage: '',
+    isOnSale: false,
+    saleEndDate: '',
     quantity: '',
     brand: '',
     model: '',
@@ -92,12 +111,15 @@ export default function AdminProducts() {
 
   // Authentication check
   useEffect(() => {
+    // Don't redirect until Zustand state is hydrated
+    if (!isHydrated) return;
+    
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/auth/login');
       return;
     }
     fetchProducts();
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, isHydrated]);
 
   // Filter products when filters change
   useEffect(() => {
@@ -264,6 +286,10 @@ export default function AdminProducts() {
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
+          originalPrice: parseFloat(formData.originalPrice) || parseFloat(formData.price),
+          discountPercentage: parseFloat(formData.discountPercentage) || 0,
+          isOnSale: formData.isOnSale,
+          saleEndDate: formData.saleEndDate ? new Date(formData.saleEndDate) : null,
           quantity: parseInt(formData.quantity),
         }),
       });
@@ -303,6 +329,10 @@ export default function AdminProducts() {
       description: product.description,
       category: product.category,
       price: product.price.toString(),
+      originalPrice: (product.originalPrice || product.price).toString(),
+      discountPercentage: (product.discountPercentage || 0).toString(),
+      isOnSale: product.isOnSale || false,
+      saleEndDate: product.saleEndDate ? new Date(product.saleEndDate).toISOString().split('T')[0] : '',
       quantity: product.quantity.toString(),
       brand: product.brand,
       model: product.model,
@@ -320,6 +350,10 @@ export default function AdminProducts() {
       description: '',
       category: '',
       price: '',
+      originalPrice: '',
+      discountPercentage: '',
+      isOnSale: false,
+      saleEndDate: '',
       quantity: '',
       brand: '',
       model: '',
@@ -334,6 +368,133 @@ export default function AdminProducts() {
     if (quantity <= 5) return { label: 'Low Stock', color: theme.warning, bg: `${theme.warning}15` };
     return { label: 'In Stock', color: theme.success, bg: `${theme.success}15` };
   }, []);
+
+  // Apply bulk discount
+  const applyBulkDiscount = useCallback(async () => {
+    setApplyingBulkDiscount(true);
+    try {
+      let targetProducts = [];
+      
+      if (bulkDiscountData.applyToAll) {
+        targetProducts = products;
+      } else if (bulkDiscountData.selectedCategory) {
+        targetProducts = products.filter(p => p.category === bulkDiscountData.selectedCategory);
+      } else {
+        alert('Please select products to apply discount to');
+        return;
+      }
+
+      const discountPercentage = parseFloat(bulkDiscountData.discountPercentage);
+      if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
+        alert('Please enter a valid discount percentage (0-100)');
+        return;
+      }
+
+      const updates = targetProducts.map(product => ({
+        _id: product._id,
+        originalPrice: product.originalPrice || product.price,
+        discountPercentage,
+        isOnSale: discountPercentage > 0,
+        saleEndDate: bulkDiscountData.saleEndDate ? new Date(bulkDiscountData.saleEndDate) : null,
+        price: discountPercentage > 0 
+          ? Math.round(((product.originalPrice || product.price) * (1 - discountPercentage / 100)) * 100) / 100
+          : (product.originalPrice || product.price)
+      }));
+
+      // Apply bulk updates
+      const response = await fetch('/api/products/bulk-discount', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates }),
+      });
+
+      if (response.ok) {
+        fetchProducts();
+        setShowBulkDiscountModal(false);
+        setBulkDiscountData({
+          discountPercentage: '',
+          applyToAll: false,
+          selectedCategory: '',
+          saleEndDate: ''
+        });
+        alert(`Successfully applied ${discountPercentage}% discount to ${updates.length} products`);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to apply bulk discount: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error applying bulk discount:', error);
+      alert('Failed to apply bulk discount. Please try again.');
+    } finally {
+      setApplyingBulkDiscount(false);
+    }
+  }, [bulkDiscountData, products, fetchProducts]);
+
+  // Remove bulk discount
+  const removeBulkDiscount = useCallback(async () => {
+    setRemovingDiscount(true);
+    try {
+      let targetProducts = [];
+      
+      if (removeDiscountData.applyToAll) {
+        targetProducts = removeDiscountData.onSaleOnly 
+          ? products.filter(p => p.isOnSale)
+          : products;
+      } else if (removeDiscountData.selectedCategory) {
+        targetProducts = products.filter(p => {
+          const matchesCategory = p.category === removeDiscountData.selectedCategory;
+          return removeDiscountData.onSaleOnly ? (matchesCategory && p.isOnSale) : matchesCategory;
+        });
+      } else {
+        alert('Please select products to remove discount from');
+        return;
+      }
+
+      if (targetProducts.length === 0) {
+        alert('No products found with the selected criteria');
+        return;
+      }
+
+      const updates = targetProducts.map(product => ({
+        _id: product._id,
+        originalPrice: product.originalPrice || product.price,
+        discountPercentage: 0,
+        isOnSale: false,
+        saleEndDate: null,
+        price: product.originalPrice || product.price
+      }));
+
+      // Apply bulk updates
+      const response = await fetch('/api/products/bulk-discount', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates }),
+      });
+
+      if (response.ok) {
+        fetchProducts();
+        setShowRemoveDiscountModal(false);
+        setRemoveDiscountData({
+          applyToAll: false,
+          selectedCategory: '',
+          onSaleOnly: true
+        });
+        alert(`Successfully removed discount from ${updates.length} products`);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to remove discount: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error removing discount:', error);
+      alert('Failed to remove discount. Please try again.');
+    } finally {
+      setRemovingDiscount(false);
+    }
+  }, [removeDiscountData, products, fetchProducts]);
 
   if (loading) {
     return (
@@ -369,17 +530,45 @@ export default function AdminProducts() {
               </p>
             </div>
             
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-              style={{ backgroundColor: theme.primary, color: theme.surface }}
-          >
-            <Plus size={20} />
-              Add New Product
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBulkDiscountModal(true)}
+                className="flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md border"
+                style={{ 
+                  backgroundColor: theme.surface, 
+                  color: theme.warning,
+                  borderColor: theme.warning
+                }}
+              >
+                <DollarSign size={18} />
+                Apply Sale Discounts
+              </button>
+              
+              <button
+                onClick={() => setShowRemoveDiscountModal(true)}
+                className="flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md border"
+                style={{ 
+                  backgroundColor: theme.surface, 
+                  color: theme.danger,
+                  borderColor: theme.danger
+                }}
+              >
+                <X size={18} />
+                Remove Discounts
+              </button>
+              
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                style={{ backgroundColor: theme.primary, color: theme.surface }}
+              >
+                <Plus size={20} />
+                Add New Product
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1019,6 +1208,129 @@ export default function AdminProducts() {
                       />
                     </div>
                     </div>
+                    
+                    {/* Discount Section */}
+                    <div className="mt-6 p-4 rounded-lg border-2 border-dashed" 
+                         style={{ borderColor: theme.warning, backgroundColor: `${theme.warning}05` }}>
+                      <h4 className="text-md font-semibold mb-4 flex items-center gap-2"
+                          style={{ color: theme.warning }}>
+                        <AlertTriangle size={18} />
+                        Sale & Discount Settings
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2" 
+                                 style={{ color: theme.text.secondary }}>
+                            Original Price (PKR)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 font-medium"
+                                  style={{ color: theme.text.secondary }}>
+                              ₨
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.originalPrice}
+                              onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
+                              className="w-full pl-10 pr-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                              style={{ borderColor: theme.border }}
+                              placeholder="Leave empty to use current price"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2" 
+                                 style={{ color: theme.text.secondary }}>
+                            Discount Percentage (%)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={formData.discountPercentage}
+                            onChange={(e) => setFormData({...formData, discountPercentage: e.target.value})}
+                            className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                            style={{ borderColor: theme.border }}
+                            placeholder="0"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="isOnSale"
+                              checked={formData.isOnSale}
+                              onChange={(e) => setFormData({...formData, isOnSale: e.target.checked})}
+                              className="w-4 h-4 rounded focus:ring-2"
+                              style={{ accentColor: theme.primary }}
+                            />
+                            <label htmlFor="isOnSale" className="ml-2 text-sm font-medium" 
+                                   style={{ color: theme.text.secondary }}>
+                              Mark as "On Sale"
+                            </label>
+                          </div>
+                          
+                          {formData.isOnSale && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData({
+                                ...formData,
+                                isOnSale: false,
+                                discountPercentage: '',
+                                saleEndDate: '',
+                                originalPrice: formData.price
+                              })}
+                              className="text-xs px-3 py-1 rounded-full border transition-colors hover:bg-red-50"
+                              style={{ 
+                                color: theme.danger, 
+                                borderColor: theme.danger
+                              }}
+                            >
+                              Clear Sale
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2" 
+                                 style={{ color: theme.text.secondary }}>
+                            Sale End Date (Optional)
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.saleEndDate}
+                            onChange={(e) => setFormData({...formData, saleEndDate: e.target.value})}
+                            className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                            style={{ borderColor: theme.border }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Price Preview */}
+                      {formData.originalPrice && formData.discountPercentage && (
+                        <div className="mt-4 p-3 rounded-lg" 
+                             style={{ backgroundColor: theme.surface, border: `1px solid ${theme.border}` }}>
+                          <h5 className="text-sm font-medium mb-2" style={{ color: theme.text.primary }}>Price Preview:</h5>
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg line-through" style={{ color: theme.text.light }}>
+                              ₨{parseFloat(formData.originalPrice || 0).toLocaleString()}
+                            </span>
+                            <span className="text-xl font-bold" style={{ color: theme.success }}>
+                              ₨{(parseFloat(formData.originalPrice || 0) * (1 - parseFloat(formData.discountPercentage || 0) / 100)).toLocaleString()}
+                            </span>
+                            <span className="text-sm font-medium px-2 py-1 rounded-full" 
+                                  style={{ backgroundColor: `${theme.success}15`, color: theme.success }}>
+                              {formData.discountPercentage}% OFF
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                 {/* Description */}
@@ -1177,6 +1489,421 @@ export default function AdminProducts() {
                   editingProduct ? 'Update Product' : 'Create Product'
                 )}
               </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Discount Modal */}
+        {showBulkDiscountModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden shadow-2xl"
+                 style={{ backgroundColor: theme.surface }}>
+              
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b flex items-center justify-between" 
+                   style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                       style={{ backgroundColor: `${theme.warning}15`, color: theme.warning }}>
+                    <DollarSign size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold" style={{ color: theme.text.primary }}>
+                      Apply Sale Discounts
+                    </h2>
+                    <p className="text-sm" style={{ color: theme.text.secondary }}>
+                      Set discount for multiple products at once
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBulkDiscountModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                  style={{ color: theme.text.light, backgroundColor: 'transparent' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                <div className="space-y-6">
+                  {/* Discount Percentage */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" 
+                           style={{ color: theme.text.secondary }}>
+                      Discount Percentage *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        required
+                        value={bulkDiscountData.discountPercentage}
+                        onChange={(e) => setBulkDiscountData({
+                          ...bulkDiscountData, 
+                          discountPercentage: e.target.value
+                        })}
+                        className="w-full pr-8 pl-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                        style={{ borderColor: theme.border }}
+                        placeholder="25"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium"
+                            style={{ color: theme.text.secondary }}>
+                        %
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Application Scope */}
+                  <div>
+                    <label className="block text-sm font-medium mb-3" 
+                           style={{ color: theme.text.secondary }}>
+                      Apply To *
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="applyTo"
+                          checked={bulkDiscountData.applyToAll}
+                          onChange={(e) => setBulkDiscountData({
+                            ...bulkDiscountData,
+                            applyToAll: e.target.checked,
+                            selectedCategory: e.target.checked ? '' : bulkDiscountData.selectedCategory
+                          })}
+                          className="w-4 h-4"
+                          style={{ accentColor: theme.primary }}
+                        />
+                        <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                          All Products ({products.length} items)
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="applyTo"
+                          checked={!bulkDiscountData.applyToAll && !!bulkDiscountData.selectedCategory}
+                          onChange={(e) => setBulkDiscountData({
+                            ...bulkDiscountData,
+                            applyToAll: false,
+                            selectedCategory: e.target.checked ? (categories[0] || '') : ''
+                          })}
+                          className="w-4 h-4"
+                          style={{ accentColor: theme.primary }}
+                        />
+                        <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                          Specific Category
+                        </span>
+                      </label>
+                    </div>
+                    
+                    {!bulkDiscountData.applyToAll && (
+                      <div className="mt-3">
+                        <select
+                          value={bulkDiscountData.selectedCategory}
+                          onChange={(e) => setBulkDiscountData({
+                            ...bulkDiscountData,
+                            selectedCategory: e.target.value
+                          })}
+                          className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                          style={{ borderColor: theme.border }}
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map(category => {
+                            const count = products.filter(p => p.category === category).length;
+                            return (
+                              <option key={category} value={category}>
+                                {category} ({count} items)
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sale End Date */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" 
+                           style={{ color: theme.text.secondary }}>
+                      Sale End Date (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={bulkDiscountData.saleEndDate}
+                      onChange={(e) => setBulkDiscountData({
+                        ...bulkDiscountData, 
+                        saleEndDate: e.target.value
+                      })}
+                      className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                      style={{ borderColor: theme.border }}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+
+                  {/* Preview */}
+                  {bulkDiscountData.discountPercentage && (
+                    <div className="p-4 rounded-lg border-2 border-dashed"
+                         style={{ borderColor: theme.success, backgroundColor: `${theme.success}05` }}>
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: theme.success }}>
+                        Preview
+                      </h4>
+                      <p className="text-sm" style={{ color: theme.text.secondary }}>
+                        {bulkDiscountData.discountPercentage}% discount will be applied to{' '}
+                        {bulkDiscountData.applyToAll 
+                          ? `all ${products.length} products`
+                          : bulkDiscountData.selectedCategory 
+                            ? `${products.filter(p => p.category === bulkDiscountData.selectedCategory).length} products in ${bulkDiscountData.selectedCategory}`
+                            : '0 products (select category)'
+                        }
+                        {bulkDiscountData.saleEndDate && (
+                          <span> until {new Date(bulkDiscountData.saleEndDate).toLocaleDateString()}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t flex gap-3" style={{ borderColor: theme.border }}>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDiscountModal(false)}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all border"
+                  style={{ 
+                    borderColor: theme.border,
+                    color: theme.text.secondary,
+                    backgroundColor: 'transparent'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={applyBulkDiscount}
+                  disabled={applyingBulkDiscount || !bulkDiscountData.discountPercentage || 
+                           (!bulkDiscountData.applyToAll && !bulkDiscountData.selectedCategory)}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ 
+                    backgroundColor: theme.warning, 
+                    color: theme.surface
+                  }}
+                >
+                  {applyingBulkDiscount ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Applying Discount...
+                    </div>
+                  ) : (
+                    'Apply Discount'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Remove Discount Modal */}
+        {showRemoveDiscountModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden shadow-2xl"
+                 style={{ backgroundColor: theme.surface }}>
+              
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b flex items-center justify-between" 
+                   style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                       style={{ backgroundColor: `${theme.danger}15`, color: theme.danger }}>
+                    <X size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold" style={{ color: theme.text.primary }}>
+                      Remove Sale Discounts
+                    </h2>
+                    <p className="text-sm" style={{ color: theme.text.secondary }}>
+                      Remove discounts from multiple products
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowRemoveDiscountModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                  style={{ color: theme.text.light, backgroundColor: 'transparent' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                <div className="space-y-6">
+                  {/* Application Scope */}
+                  <div>
+                    <label className="block text-sm font-medium mb-3" 
+                           style={{ color: theme.text.secondary }}>
+                      Remove From *
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="removeFrom"
+                          checked={removeDiscountData.applyToAll}
+                          onChange={(e) => setRemoveDiscountData({
+                            ...removeDiscountData,
+                            applyToAll: e.target.checked,
+                            selectedCategory: e.target.checked ? '' : removeDiscountData.selectedCategory
+                          })}
+                          className="w-4 h-4"
+                          style={{ accentColor: theme.primary }}
+                        />
+                        <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                          All Products
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="removeFrom"
+                          checked={!removeDiscountData.applyToAll && !!removeDiscountData.selectedCategory}
+                          onChange={(e) => setRemoveDiscountData({
+                            ...removeDiscountData,
+                            applyToAll: false,
+                            selectedCategory: e.target.checked ? (categories[0] || '') : ''
+                          })}
+                          className="w-4 h-4"
+                          style={{ accentColor: theme.primary }}
+                        />
+                        <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                          Specific Category
+                        </span>
+                      </label>
+                    </div>
+                    
+                    {!removeDiscountData.applyToAll && (
+                      <div className="mt-3">
+                        <select
+                          value={removeDiscountData.selectedCategory}
+                          onChange={(e) => setRemoveDiscountData({
+                            ...removeDiscountData,
+                            selectedCategory: e.target.value
+                          })}
+                          className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition-all"
+                          style={{ borderColor: theme.border }}
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map(category => {
+                            const onSaleCount = products.filter(p => p.category === category && p.isOnSale).length;
+                            const totalCount = products.filter(p => p.category === category).length;
+                            return (
+                              <option key={category} value={category}>
+                                {category} ({onSaleCount} on sale / {totalCount} total)
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filter Options */}
+                  <div>
+                    <label className="block text-sm font-medium mb-3" 
+                           style={{ color: theme.text.secondary }}>
+                      Filter Options
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={removeDiscountData.onSaleOnly}
+                        onChange={(e) => setRemoveDiscountData({
+                          ...removeDiscountData,
+                          onSaleOnly: e.target.checked
+                        })}
+                        className="w-4 h-4"
+                        style={{ accentColor: theme.primary }}
+                      />
+                      <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                        Only remove from products currently on sale
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Preview */}
+                  <div className="p-4 rounded-lg border-2 border-dashed"
+                       style={{ borderColor: theme.info, backgroundColor: `${theme.info}05` }}>
+                    <h4 className="text-sm font-semibold mb-2" style={{ color: theme.info }}>
+                      Preview
+                    </h4>
+                    <p className="text-sm" style={{ color: theme.text.secondary }}>
+                      Discount will be removed from{' '}
+                      {(() => {
+                        let targetProducts = [];
+                        if (removeDiscountData.applyToAll) {
+                          targetProducts = removeDiscountData.onSaleOnly 
+                            ? products.filter(p => p.isOnSale)
+                            : products;
+                        } else if (removeDiscountData.selectedCategory) {
+                          targetProducts = products.filter(p => {
+                            const matchesCategory = p.category === removeDiscountData.selectedCategory;
+                            return removeDiscountData.onSaleOnly ? (matchesCategory && p.isOnSale) : matchesCategory;
+                          });
+                        }
+                        
+                        if (removeDiscountData.applyToAll) {
+                          return removeDiscountData.onSaleOnly 
+                            ? `${targetProducts.length} products currently on sale`
+                            : `all ${targetProducts.length} products`;
+                        } else if (removeDiscountData.selectedCategory) {
+                          return `${targetProducts.length} products in ${removeDiscountData.selectedCategory}${removeDiscountData.onSaleOnly ? ' (on sale only)' : ''}`;
+                        } else {
+                          return '0 products (select category)';
+                        }
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t flex gap-3" style={{ borderColor: theme.border }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRemoveDiscountModal(false)}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all border"
+                  style={{ 
+                    borderColor: theme.border,
+                    color: theme.text.secondary,
+                    backgroundColor: 'transparent'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={removeBulkDiscount}
+                  disabled={removingDiscount || (!removeDiscountData.applyToAll && !removeDiscountData.selectedCategory)}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ 
+                    backgroundColor: theme.danger, 
+                    color: theme.surface
+                  }}
+                >
+                  {removingDiscount ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Removing Discount...
+                    </div>
+                  ) : (
+                    'Remove Discount'
+                  )}
+                </button>
               </div>
             </div>
           </div>

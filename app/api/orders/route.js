@@ -31,15 +31,44 @@ export async function GET(request) {
     const [orders, total] = await Promise.all([
       Order.find(query)
         .populate('user', 'name email')
-        .populate('items.product', 'title images price')
+        .populate({
+          path: 'items.product',
+          select: 'title images price',
+          // Don't fail if product is deleted, just return null
+          options: { strictPopulate: false }
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Order.countDocuments(query),
     ]);
     
+    // Process orders to handle deleted products
+    const processedOrders = orders.map(order => {
+      const processedItems = order.items.map(item => {
+        if (!item.product) {
+          // Product was deleted, create a placeholder
+          return {
+            ...item.toObject(),
+            product: {
+              _id: 'deleted',
+              title: `Deleted Product (ID: ${item.product || 'Unknown'})`,
+              images: [],
+              price: item.price
+            }
+          };
+        }
+        return item;
+      });
+      
+      return {
+        ...order.toObject(),
+        items: processedItems
+      };
+    });
+    
     return Response.json({
-      orders,
+      orders: processedOrders,
       pagination: {
         page,
         limit,

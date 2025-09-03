@@ -8,7 +8,7 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
 export default function AdminSettings() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   const [settings, setSettings] = useState({
     businessName: 'Hafiz Tech',
@@ -21,12 +21,15 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Don't redirect until Zustand state is hydrated
+    if (!isHydrated) return;
+    
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/auth/login');
       return;
     }
     fetchSettings();
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, isHydrated]);
 
   const fetchSettings = async () => {
     try {
@@ -88,7 +91,7 @@ export default function AdminSettings() {
     }
   };
 
-  if (loading) {
+  if (loading || !isHydrated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>

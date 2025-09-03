@@ -1,5 +1,6 @@
 import connectDB from '@/lib/mongodb';
 import Order from '@/models/Order';
+import Product from '@/models/Product';
 import { verifyToken } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -53,6 +54,49 @@ export async function PUT(request, { params }) {
     
   } catch (error) {
     console.error('Order update error:', error);
+    return Response.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    await connectDB();
+    
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    // First, find the order to get item details for inventory restoration
+    const order = await Order.findById(params.id).populate('items.product');
+    if (!order) {
+      return Response.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // Restore product inventory if the order was not delivered/cancelled
+    if (order.status === 'Pending' || order.status === 'Shipped') {
+      for (const item of order.items) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(
+            item.product._id,
+            { $inc: { quantity: item.quantity } }
+          );
+        }
+      }
+    }
+
+    // Delete the order
+    await Order.findByIdAndDelete(params.id);
+
+    return Response.json({ message: 'Order deleted successfully' });
+    
+  } catch (error) {
+    console.error('Order deletion error:', error);
     return Response.json({ error: 'Server error' }, { status: 500 });
   }
 }

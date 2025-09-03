@@ -17,6 +17,24 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  originalPrice: {
+    type: Number,
+    default: function() { return this.price; }
+  },
+  discountPercentage: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  isOnSale: {
+    type: Boolean,
+    default: false
+  },
+  saleEndDate: {
+    type: Date,
+    default: null
+  },
   quantity: {
     type: Number,
     required: true,
